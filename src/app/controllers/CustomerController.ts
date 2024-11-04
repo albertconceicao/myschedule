@@ -61,6 +61,21 @@ export class CustomerController {
 		}
 	}
 
+	async listAllBirthdays(req: Request, res: Response) {
+		logger.info('listAllBirthdays >> Start >>');
+		logger.info('here1');
+		try {
+			logger.info('here2');
+			const birthdays = await CustomersRepositoryFunction.findAllBirthdays();
+
+			logger.info('listAllBirthdays << End <<');
+			res.status(StatusCode.FOUND).json(birthdays);
+		} catch (error) {
+			logger.error('listAllBirthdays :: Error :: ', error);
+			res.status(StatusCode.INTERNAL_SERVER_ERROR).json(generalServerError);
+		}
+	}
+
 	/** ------------------------------------------------------------------------------
 	 * @function create
 	 * @param req
@@ -69,8 +84,10 @@ export class CustomerController {
 	async createPatient(req: Request, res: Response) {
 		logger.info('create >> Start');
 		// Create a new records
-		const { name, email, phone, password } = req.body;
-		logger.debug(`name: ${name} , email: ${email}, phone: ${phone}`);
+		const { name, email, phone, password, birthday } = req.body;
+		logger.debug(
+			`name: ${name} , email: ${email}, phone: ${phone}, birthday: ${birthday}`,
+		);
 		const requiredFields = verifyRequiredFields({ name, email });
 
 		try {
@@ -97,6 +114,7 @@ export class CustomerController {
 				email,
 				phone,
 				password: hashedPassword,
+				birthday,
 			});
 			logger.info('create << End <<');
 			res.json(customer);
@@ -115,7 +133,7 @@ export class CustomerController {
 		logger.info('update >> Start >>');
 		// Update a specific records
 		const { id } = req.params;
-		const { name, email, phone, password } = req.body;
+		const { name, email, phone, password, birthday } = req.body;
 
 		const hashedPassword = bcrypt.hashSync(password, 10);
 		try {
@@ -136,7 +154,6 @@ export class CustomerController {
 			}
 			const customerByEmail =
 				await CustomersRepositoryFunction.findByEmail(email);
-
 			if (customerByEmail && customerByEmail._id != id) {
 				logger.error('update :: Error :: ', emailAlreadyExists.message);
 				logger.debug('update :: Error :: Email :', email);
@@ -148,6 +165,7 @@ export class CustomerController {
 				email,
 				phone,
 				password: hashedPassword,
+				birthday,
 			});
 
 			logger.info('update << End <<');

@@ -1,8 +1,7 @@
 import mongoose, { Schema } from 'mongoose';
 
-const User: any = new Schema(
+const Customer: any = new Schema(
 	{
-		id: mongoose.Schema.Types.ObjectId,
 		name: {
 			type: String,
 			required: true,
@@ -19,9 +18,9 @@ const User: any = new Schema(
 			type: String,
 			required: false,
 		},
-		created_at: {
+		birthday: {
 			type: Date,
-			default: new Date(),
+			required: false,
 		},
 	},
 	{
@@ -29,4 +28,4 @@ const User: any = new Schema(
 	},
 );
 
-mongoose.model('customers', User);
+mongoose.model('customers', Customer);
