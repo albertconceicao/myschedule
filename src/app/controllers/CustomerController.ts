@@ -56,18 +56,20 @@ export class CustomerController {
 			logger.info('find << End <<');
 			res.status(StatusCode.FOUND).json(customer);
 		} catch (error) {
-			logger.error('find :: Error :: ', error);
+			logger.error('find :: Error General:: ', error);
 			res.status(StatusCode.INTERNAL_SERVER_ERROR).json(generalServerError);
 		}
 	}
 
+	/**
+	 * @function listAllBirthdays
+	 * @param req
+	 * @param res
+	 */
 	async listAllBirthdays(req: Request, res: Response) {
 		logger.info('listAllBirthdays >> Start >>');
-		logger.info('here1');
 		try {
-			logger.info('here2');
 			const birthdays = await CustomersRepositoryFunction.findAllBirthdays();
-
 			logger.info('listAllBirthdays << End <<');
 			res.status(StatusCode.FOUND).json(birthdays);
 		} catch (error) {

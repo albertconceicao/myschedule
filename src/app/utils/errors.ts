@@ -25,3 +25,9 @@ export const generalServerError = {
 	message: 'General server error',
 	shortMessage: 'generalServerError',
 };
+
+export const paymentNotFound = {
+	code: 'ERR-005-VAL',
+	message: 'payment not found in the database, please fix it and try again',
+	shortMessage: 'paymentNotFound',
+};

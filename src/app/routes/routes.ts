@@ -1,37 +1,30 @@
-// The router purpose is to send the requests to Controllers and activate his methods. The Controller will connect with Repository, that will connect with Data Source and return to Controller the result
-
 import { Router } from 'express';
 
 import { AppointmentController } from '../controllers/AppointmentController';
 import { AuthController } from '../controllers/AuthController';
 import { CustomerController } from '../controllers/CustomerController';
+import { PaymentController } from '../controllers/PaymentController';
 
 const CustomerControllerFunction = new CustomerController();
 const AppointmentControllerFunction = new AppointmentController();
 const AuthControllerFunction = new AuthController();
+const PaymentsControllerFunction = new PaymentController();
 
 export const router = Router();
 
-router.get(
-	'/customers',
-	// AuthControllerFunction.verifyToken,
-	CustomerControllerFunction.list,
-);
-router.get('/customers/:id', CustomerControllerFunction.find);
+// Customers Routes
+router.get('/customers', CustomerControllerFunction.list);
 router.get('/customers/birthday', CustomerControllerFunction.listAllBirthdays);
-router.delete('/customers/:id', CustomerControllerFunction.delete);
-router.post('/customers/', CustomerControllerFunction.createPatient);
+router.get('/customers/:id', CustomerControllerFunction.find);
+router.post('/customers', CustomerControllerFunction.createPatient);
 router.put('/customers/:id', CustomerControllerFunction.update);
+router.delete('/customers/:id', CustomerControllerFunction.delete);
 
+// Auth Routes
 router.post('/login', AuthControllerFunction.login);
-router.post(
-	'/authenticatedRoute',
-	// AuthControllerFunction.verifyToken,
-	CustomerControllerFunction.list,
-);
+router.post('/authenticatedRoute', CustomerControllerFunction.list);
 
-router.post('/customers/appointment', CustomerControllerFunction.createPatient);
-
+// Appointments Routes
 router.get('/appointments', AppointmentControllerFunction.list);
 router.get(
 	'/customers/:customerId/appointments',
@@ -41,7 +34,6 @@ router.get(
 	'/appointments/:appointmentId',
 	AppointmentControllerFunction.findById,
 );
-
 router.post('/appointments', AppointmentControllerFunction.create);
 router.put(
 	'/appointments/:appointmentId',
@@ -51,3 +43,15 @@ router.delete(
 	'/appointments/:appointmentId',
 	AppointmentControllerFunction.delete,
 );
+
+// Payments Routes
+router.get('/payments', PaymentsControllerFunction.list);
+router.get('/payments/report', PaymentsControllerFunction.report);
+router.get('/payments/:id', PaymentsControllerFunction.find);
+router.get(
+	'/customers/:customerId/payments',
+	PaymentsControllerFunction.listByCustomer,
+);
+router.post('/payments', PaymentsControllerFunction.create);
+router.put('/payments/:id', PaymentsControllerFunction.update);
+router.delete('/payments/:id', PaymentsControllerFunction.delete);

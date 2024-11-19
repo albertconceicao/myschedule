@@ -4,7 +4,7 @@ const Appointment: any = new Schema(
 	{
 		customerId: {
 			type: Schema.Types.ObjectId,
-			ref: 'customers', // Nome da collection Customer
+			ref: 'customers',
 			required: true,
 		},
 		date: {

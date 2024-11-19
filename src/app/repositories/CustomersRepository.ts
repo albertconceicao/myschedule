@@ -23,7 +23,7 @@ export class CustomersRepository {
 	}
 
 	async findAllBirthdays(): Promise<any> {
-		return Customer.find({});
+		return Customer.find({}, 'name birthday').sort({ name: 'asc' });
 	}
 
 	async findById(id: string): Promise<any> {
@@ -45,7 +45,6 @@ export class CustomersRepository {
 	}
 
 	// TODO: remove the validation, and the two step database update (find and save) have to be implemented separately
-	// TODO: also delegates the error handling to controller
 	async update(
 		id: string,
 		{ name, email, phone, password, birthday }: ICustomer,
