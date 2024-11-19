@@ -86,6 +86,8 @@ export class PaymentsRepository {
 	 * Generate financial reports filtered by customer and/or date range
 	 */
 	async generateReport(filters: any): Promise<any> {
-		return Payment.find(filters).sort({ paymentDate: 'asc' });
+		return Payment.find(filters)
+			.populate('customerId appointmentId')
+			.sort({ paymentDate: 'asc' });
 	}
 }

@@ -22,6 +22,23 @@ const Customer: any = new Schema(
 			type: Date,
 			required: false,
 		},
+		paymentType: {
+			type: String,
+			enum: ['per_session', 'monthly'],
+			default: 'per_session',
+		},
+		sessionRate: {
+			type: Number,
+			default: 0,
+		},
+		monthlyRate: {
+			type: Number,
+			default: 0,
+		},
+		balanceDue: {
+			type: Number,
+			default: 0,
+		},
 	},
 	{
 		timestamps: true,

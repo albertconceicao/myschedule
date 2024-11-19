@@ -10,6 +10,7 @@ interface IAppointment {
 	date: Date;
 	description: string;
 	notes?: string;
+	amount?: number;
 }
 
 export class AppointmentsRepository {

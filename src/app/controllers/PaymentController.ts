@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 
+import { CustomersRepository } from '../repositories/CustomersRepository';
 import { PaymentsRepository } from '../repositories/PaymentsRepository';
 import {
 	generalServerError,
@@ -11,6 +12,7 @@ import { StatusCode } from '../utils/statusCodes';
 import { verifyRequiredFields } from '../utils/validations';
 
 const PaymentsRepositoryFunction = new PaymentsRepository();
+const CustomersRepositoryFunction = new CustomersRepository();
 
 export class PaymentController {
 	/** ------------------------------------------------------------------
@@ -181,24 +183,38 @@ export class PaymentController {
 	 * Generate financial reports
 	 */
 	async report(req: Request, res: Response) {
-		logger.info('report >> Start >>');
-		const { customerId, startDate, endDate } = req.query;
+		logger.info('generateReport >> Start >>');
+
+		const { startDate, endDate } = req.query;
 
 		try {
-			const filters: any = {};
-			if (customerId) filters.customerId = customerId;
-			if (startDate && endDate)
-				filters.paymentDate = {
-					$gte: new Date(startDate as string),
-					$lte: new Date(endDate as string),
+			const start = new Date(
+				String(startDate).replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1'),
+			);
+			const end = new Date(
+				String(endDate).replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1'),
+			);
+
+			const customers = await CustomersRepositoryFunction.findAll();
+
+			const report = customers.map((customer: any) => {
+				const total =
+					customer.paymentType === 'per_session'
+						? customer.balanceDue
+						: customer.monthlyRate;
+				return {
+					customerId: customer._id,
+					name: customer.name,
+					email: customer.email,
+					paymentType: customer.paymentType,
+					total,
 				};
+			});
 
-			const report = await PaymentsRepositoryFunction.generateReport(filters);
-
-			logger.info('report << End <<');
+			logger.info('generateReport << End <<');
 			res.status(StatusCode.SUCCESS).json(report);
 		} catch (error) {
-			logger.error('report :: Error :: ', error);
+			logger.error('generateReport :: Error :: ', error);
 			res.status(StatusCode.INTERNAL_SERVER_ERROR).json(generalServerError);
 		}
 	}

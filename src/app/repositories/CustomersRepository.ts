@@ -12,6 +12,10 @@ interface ICustomer {
 	phone: string;
 	password?: string;
 	birthday?: Date;
+	paymentType: 'per_session' | 'monthly';
+	sessionRate: Number;
+	monthlyRate: Number;
+	balanceDue: Number;
 }
 
 export class CustomersRepository {
@@ -40,8 +44,22 @@ export class CustomersRepository {
 		phone,
 		password,
 		birthday,
+		paymentType,
+		sessionRate,
+		monthlyRate,
+		balanceDue,
 	}: ICustomer): Promise<any> {
-		return Customer.create({ name, email, phone, password, birthday });
+		return Customer.create({
+			name,
+			email,
+			phone,
+			password,
+			birthday,
+			paymentType,
+			sessionRate,
+			monthlyRate,
+			balanceDue,
+		});
 	}
 
 	// TODO: remove the validation, and the two step database update (find and save) have to be implemented separately
@@ -62,6 +80,14 @@ export class CustomersRepository {
 		);
 
 		return updatedUser;
+	}
+
+	async updateBalance(customerId: string, amount: number): Promise<any> {
+		return Customer.findByIdAndUpdate(
+			customerId,
+			{ $inc: { balanceDue: amount } },
+			{ new: true },
+		);
 	}
 
 	async delete(id: string): Promise<any> {

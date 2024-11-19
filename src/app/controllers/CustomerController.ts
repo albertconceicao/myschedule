@@ -86,15 +86,24 @@ export class CustomerController {
 	async createPatient(req: Request, res: Response) {
 		logger.info('create >> Start');
 		// Create a new records
-		const { name, email, phone, password, birthday } = req.body;
-		logger.debug(
-			`name: ${name} , email: ${email}, phone: ${phone}, birthday: ${birthday}`,
-		);
-		const requiredFields = verifyRequiredFields({ name, email });
+		const {
+			name,
+			email,
+			phone,
+			password,
+			birthday,
+			paymentType,
+			sessionRate,
+			monthlyRate,
+		} = req.body;
+
+		const requiredFields = verifyRequiredFields({ name, email, password });
 
 		try {
+			// Hash the password
 			const hashedPassword = bcrypt.hashSync(password, 10);
 
+			// Validate mandatory fields
 			if (requiredFields.length > 0) {
 				logger.error('create :: Error :: ', mandatoryFieldsRequired.message);
 				logger.debug('create :: Error :: Fields ', requiredFields);
@@ -103,6 +112,7 @@ export class CustomerController {
 					.json({ error: mandatoryFieldsRequired, fields: requiredFields });
 			}
 
+			// Check if the customer already exists
 			const customerExists =
 				await CustomersRepositoryFunction.findByEmail(email);
 
@@ -111,13 +121,24 @@ export class CustomerController {
 				logger.debug('create :: Error :: Email :', email);
 				return res.status(StatusCode.BAD_REQUEST).json(emailAlreadyExists);
 			}
-			const customer = await CustomersRepositoryFunction.createPatient({
+
+			// Set default values for paymentType, sessionRate, and monthlyRate if not provided
+			const newCustomer = {
 				name,
 				email,
 				phone,
 				password: hashedPassword,
 				birthday,
-			});
+				paymentType: paymentType || 'per_session', // Default to 'per_session'
+				sessionRate: sessionRate || 0, // Default to 0 if not provided
+				monthlyRate: monthlyRate || 0, // Default to 0 if not provided
+				balanceDue: 0.0, // Default balance due is 0
+			};
+
+			// Create the new customer
+			const customer =
+				await CustomersRepositoryFunction.createPatient(newCustomer);
+
 			logger.info('create << End <<');
 			res.json(customer);
 		} catch (error) {
@@ -135,7 +156,16 @@ export class CustomerController {
 		logger.info('update >> Start >>');
 		// Update a specific records
 		const { id } = req.params;
-		const { name, email, phone, password, birthday } = req.body;
+		const {
+			name,
+			email,
+			phone,
+			password,
+			birthday,
+			paymentType,
+			sessionRate,
+			monthlyRate,
+		} = req.body;
 
 		const hashedPassword = bcrypt.hashSync(password, 10);
 		try {
@@ -168,6 +198,10 @@ export class CustomerController {
 				phone,
 				password: hashedPassword,
 				birthday,
+				paymentType: paymentType || 'per_session', // Default to 'per_session'
+				sessionRate: sessionRate || 0, // Default to 0 if not provided
+				monthlyRate: monthlyRate || 0, // Default to 0 if not provided
+				balanceDue: 0,
 			});
 
 			logger.info('update << End <<');

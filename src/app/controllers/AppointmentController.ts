@@ -2,11 +2,13 @@ import { parse } from 'date-fns';
 import { Request, Response } from 'express';
 
 import { AppointmentsRepository } from '../repositories/AppointmentsRepository';
+import { CustomersRepository } from '../repositories/CustomersRepository';
 import { generalServerError } from '../utils/errors';
 import logger from '../utils/logger';
 import { StatusCode } from '../utils/statusCodes';
 
 const AppointmentsRepositoryFunction = new AppointmentsRepository();
+const CustomersRepositoryFunction = new CustomersRepository();
 
 export class AppointmentController {
 	async list(req: Request, res: Response) {
@@ -66,26 +68,42 @@ export class AppointmentController {
 	 */
 	async create(req: Request, res: Response) {
 		logger.info('create >> Start >>');
+
 		const { customerId, date, description, notes } = req.body;
-		const requiredFields = ['customerId', 'date', 'description'];
 
 		try {
-			const missingFields = requiredFields.filter((field) => !req.body[field]);
-			if (missingFields.length > 0) {
-				logger.error('create :: Error :: Missing fields', missingFields);
-				return res.status(StatusCode.BAD_REQUEST).json({
-					error: 'Campos obrigatórios estão faltando',
-					fields: missingFields,
+			const customer = await CustomersRepositoryFunction.findById(customerId);
+			if (!customer) {
+				return res.status(StatusCode.NOT_FOUND).json({
+					error: 'Customer not found',
 				});
 			}
 
+			let appointmentAmount = 0;
+			if (customer.paymentType === 'per_session') {
+				appointmentAmount = customer.sessionRate;
+			} else if (customer.paymentType === 'monthly') {
+				// Para pagamento mensal, o valor será calculado no relatório, sem saldo
+				appointmentAmount = 0;
+			}
+
+			// Cria o appointment
 			const appointment =
 				await AppointmentsRepositoryFunction.createAppointment({
 					customerId,
 					date,
 					description,
 					notes,
+					amount: appointmentAmount,
 				});
+
+			// Atualiza o saldo devedor, caso o pagamento seja por sessão
+			if (customer.paymentType === 'per_session') {
+				await CustomersRepositoryFunction.updateBalance(
+					customerId,
+					appointmentAmount,
+				);
+			}
 
 			logger.info('create << End <<');
 			res.status(StatusCode.CREATED).json(appointment);
