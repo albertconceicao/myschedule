@@ -39,6 +39,10 @@ const PaymentSchema: Schema = new Schema(
 			enum: ['paid', 'pending', 'failed'],
 			default: 'pending',
 		},
+		isFullyPaid: {
+			type: Boolean,
+			default: false,
+		},
 	},
 	{
 		timestamps: true,

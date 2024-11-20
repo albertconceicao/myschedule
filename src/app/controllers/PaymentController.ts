@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 
+import { ChargesRepository } from '../repositories/ChargesRepository';
 import { CustomersRepository } from '../repositories/CustomersRepository';
 import { PaymentsRepository } from '../repositories/PaymentsRepository';
 import {
@@ -13,6 +14,7 @@ import { verifyRequiredFields } from '../utils/validations';
 
 const PaymentsRepositoryFunction = new PaymentsRepository();
 const CustomersRepositoryFunction = new CustomersRepository();
+const ChargesRepositoryFunction = new ChargesRepository();
 
 export class PaymentController {
 	/** ------------------------------------------------------------------
@@ -77,8 +79,7 @@ export class PaymentController {
 	 */
 	async create(req: Request, res: Response) {
 		logger.info('create >> Start >>');
-		const { customerId, appointmentId, amount, paymentType, paymentDate } =
-			req.body;
+		const { customerId, amount, paymentType, paymentDate } = req.body;
 
 		const requiredFields = verifyRequiredFields({
 			customerId,
@@ -95,14 +96,32 @@ export class PaymentController {
 				});
 			}
 
+			// Processar o pagamento
 			const payment = await PaymentsRepositoryFunction.create({
 				customerId,
-				appointmentId,
 				amount,
 				paymentType,
 				paymentDate: paymentDate || new Date(),
 				status: 'pending', // Default status
 			});
+
+			// Atualizar cobranças pendentes (se aplicável)
+			const pendingCharges =
+				await ChargesRepositoryFunction.findPendingByCustomerId(customerId);
+
+			if (pendingCharges.length > 0) {
+				const matchedCharge = pendingCharges.find(
+					(charge: any) =>
+						charge.amount === amount && charge.chargeType === paymentType,
+				);
+
+				if (matchedCharge) {
+					await ChargesRepositoryFunction.updateStatus(
+						matchedCharge.id,
+						'paid',
+					);
+				}
+			}
 
 			logger.info('create << End <<');
 			res.status(StatusCode.CREATED).json(payment);

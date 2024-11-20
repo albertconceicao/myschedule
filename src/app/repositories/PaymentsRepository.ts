@@ -1,8 +1,13 @@
 // Connect with Data Source
 import mongoose from 'mongoose';
-import '../models/Payment';
 
+import '../models/Customer';
+import '../models/Payment';
+import { ChargesRepository } from './ChargesRepository';
+
+const ChargesRepositoryFunction = new ChargesRepository();
 const Payment = mongoose.model('payments');
+const Customer = mongoose.model('customers');
 
 interface IPayment {
 	id?: string;
@@ -30,22 +35,26 @@ export class PaymentsRepository {
 			.sort({ date: 'asc' });
 	}
 
-	async create({
-		customerId,
-		appointmentId,
-		amount,
-		paymentType,
-		paymentDate,
-		status = 'pending',
-	}: IPayment): Promise<any> {
-		return Payment.create({
-			customerId,
-			appointmentId,
-			amount,
-			paymentType,
-			paymentDate: paymentDate || new Date(),
-			status,
-		});
+	async create(payment: IPayment): Promise<any> {
+		const { customerId, amount, paymentType } = payment;
+
+		// Localizar cobrança pendente correspondente
+		const pendingCharges =
+			await ChargesRepositoryFunction.findPendingByCustomerId(customerId);
+
+		if (pendingCharges.length > 0) {
+			const matchedCharge = pendingCharges.find(
+				(charge: any) =>
+					charge.amount === amount && charge.chargeType === paymentType,
+			);
+			if (matchedCharge) {
+				// Atualiza o status da cobrança para 'paid'
+				await ChargesRepositoryFunction.updateStatus(matchedCharge.id, 'paid');
+			}
+		}
+
+		// Cria o pagamento
+		return Payment.create(payment);
 	}
 
 	async update(
