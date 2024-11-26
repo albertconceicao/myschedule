@@ -38,6 +38,10 @@ export class CustomersRepository {
 		return Customer.findOne({ email }).then((user) => user);
 	}
 
+	async findByEmails(emails: string[]): Promise<any> {
+		return Customer.find({ email: { $in: emails } }).exec();
+	}
+
 	async createPatient({
 		name,
 		email,
@@ -92,5 +96,9 @@ export class CustomersRepository {
 
 	async delete(id: string): Promise<any> {
 		return Customer.findOneAndDelete({ _id: id });
+	}
+
+	async bulkInsert(customers: any[]): Promise<void> {
+		await Customer.insertMany(customers);
 	}
 }

@@ -1,4 +1,3 @@
-import { parse } from 'date-fns';
 import { Request, Response } from 'express';
 
 import { AppointmentsRepository } from '../repositories/AppointmentsRepository';
@@ -115,12 +114,15 @@ export class AppointmentController {
 
 	async update(req: Request, res: Response) {
 		logger.info('updateAppointment >> Start >>');
-		const { appointmentId, date, description, notes } = req.body;
+		const { appointmentId } = req.params;
+		const { date, description, notes } = req.body;
 		const requiredFields = ['appointmentId', 'date', 'description'];
-		const formattedDate = parse(date, 'dd/MM/yyyy', new Date());
-
+		// const formattedDate = parse(date, 'dd/MM/yyyy', new Date());
+		const formattedDate = new Date(date);
 		try {
-			const missingFields = requiredFields.filter((field) => !req.body[field]);
+			const missingFields = requiredFields.filter(
+				(field) => !req.body[field] && !req.params[field],
+			);
 			if (missingFields.length > 0) {
 				logger.error(
 					'updateAppointment :: Error :: Missing fields',
@@ -129,6 +131,12 @@ export class AppointmentController {
 				return res.status(StatusCode.BAD_REQUEST).json({
 					error: 'Campos obrigatórios estão faltando',
 					fields: missingFields,
+				});
+			}
+			if (isNaN(formattedDate.getTime())) {
+				logger.error('updateAppointment :: Error :: Invalid date format', date);
+				return res.status(StatusCode.BAD_REQUEST).json({
+					error: 'Formato de data inválido',
 				});
 			}
 			const appointment =

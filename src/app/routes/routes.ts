@@ -1,4 +1,7 @@
+import path from 'path';
+
 import { Router } from 'express';
+import multer from 'multer';
 
 import { AppointmentController } from '../controllers/AppointmentController';
 import { AuthController } from '../controllers/AuthController';
@@ -11,12 +14,18 @@ const AuthControllerFunction = new AuthController();
 const PaymentsControllerFunction = new PaymentController();
 
 export const router = Router();
+const upload = multer({ dest: path.resolve(__dirname, '..', 'uploads') });
 
 // Customers Routes
 router.get('/customers', CustomerControllerFunction.list);
 router.get('/customers/birthday', CustomerControllerFunction.listAllBirthdays);
 router.get('/customers/:id', CustomerControllerFunction.find);
 router.post('/customers', CustomerControllerFunction.createPatient);
+router.post(
+	'/customers/import',
+	upload.single('file'),
+	CustomerControllerFunction.importCustomers,
+);
 router.put('/customers/:id', CustomerControllerFunction.update);
 router.delete('/customers/:id', CustomerControllerFunction.delete);
 

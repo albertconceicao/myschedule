@@ -15,7 +15,7 @@ interface IAppointment {
 
 export class AppointmentsRepository {
 	async findAll() {
-		return Appointment.find({}).sort({ date: 'asc' });
+		return Appointment.find({}).populate('customerId').sort({ date: 'asc' });
 	}
 
 	async findById(id: string): Promise<any> {

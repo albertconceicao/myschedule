@@ -1,5 +1,8 @@
+import fs from 'fs/promises';
+
 import bcrypt from 'bcrypt';
 import { Request, Response } from 'express';
+import xlsx from 'xlsx';
 
 import { CustomersRepository } from '../repositories/CustomersRepository';
 import {
@@ -246,5 +249,70 @@ export class CustomerController {
 			statusCode: StatusCode.SUCCESS,
 			message: 'Authenticated',
 		});
+	}
+
+	/** ------------------------------------------------------------------------------
+	 * @function importCustomers
+	 * @param req
+	 * @param res
+	 */
+	async importCustomers(req: Request, res: Response): Promise<Response> {
+		try {
+			logger.info('bulk >> Start >>');
+			const filePath = req.file?.path;
+
+			if (!filePath) {
+				return res.status(400).send({ error: 'Nenhum arquivo enviado.' });
+			}
+
+			// Ler o arquivo
+			const fileBuffer = await fs.readFile(filePath);
+			const workbook = xlsx.read(fileBuffer, { type: 'buffer' });
+			const sheetName = workbook.SheetNames[0];
+			const sheet = workbook.Sheets[sheetName];
+			const jsonData: any[] = xlsx.utils.sheet_to_json(sheet);
+
+			// Extrair todos os e-mails da planilha
+			const emailsFromSheet = jsonData.map((row: any) => row.Email);
+
+			// Buscar e-mails já existentes no banco em uma única consulta
+			const existingCustomers =
+				await CustomersRepositoryFunction.findByEmails(emailsFromSheet);
+			const existingEmails = new Set(
+				existingCustomers.map((c: any) => c.email),
+			);
+
+			// Filtrar clientes que já existem no banco
+			const customersToInsert = jsonData
+				.filter((row: any) => !existingEmails.has(row.Email))
+				.map((row: any) => ({
+					name: row.Nome,
+					email: row.Email,
+					phone: row.Telefone,
+					birthday: row.DataNascimento ? new Date(row.DataNascimento) : null,
+					paymentType:
+						row.TipoPagamento === 'Mensal' ? 'monthly' : 'per_session',
+					sessionRate: row.ValorSessao || 0,
+					monthlyRate: row.ValorMensal || 0,
+					balanceDue: row.SaldoDevedor || 0,
+				}));
+
+			// Inserir novos clientes no banco
+			if (customersToInsert.length > 0) {
+				await CustomersRepositoryFunction.bulkInsert(customersToInsert);
+			}
+
+			// Remover o arquivo após processar
+			await fs.unlink(filePath);
+
+			logger.info('bulk << End <<');
+			return res.status(200).send({
+				message: `Clientes importados com sucesso! ${customersToInsert.length} clientes adicionados.`,
+			});
+		} catch (error) {
+			console.error(error);
+			logger.error('bulk :: Error :: ', error);
+			return res.status(500).send({ error: 'Erro ao importar clientes.' });
+		}
 	}
 }
