@@ -9,7 +9,6 @@ const Customer: any = new Schema(
 		email: {
 			type: String,
 			required: true,
-			unique: true,
 		},
 		password: {
 			type: String,
@@ -39,6 +38,11 @@ const Customer: any = new Schema(
 		balanceDue: {
 			type: Number,
 			default: 0,
+		},
+		doctorId: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'Doctor', // Referência ao Doctor
+			required: true,
 		},
 	},
 	{

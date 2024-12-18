@@ -26,6 +26,12 @@ export class CustomersRepository {
 		return Customer.find({}).sort({ _id: direction.toLowerCase() as any });
 	}
 
+	async findAllByDoctorId(doctorId: string, orderBy?: string): Promise<any> {
+		const direction = orderBy?.toUpperCase() === 'DESC' ? -1 : 1;
+
+		return Customer.find({ doctorId }).sort({ name: direction });
+	}
+
 	async findAllBirthdays(): Promise<any> {
 		return Customer.find({}, 'name birthday').sort({ name: 'asc' });
 	}

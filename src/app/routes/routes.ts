@@ -4,13 +4,13 @@ import { Router } from 'express';
 import multer from 'multer';
 
 import { AppointmentController } from '../controllers/AppointmentController';
-import { AuthController } from '../controllers/AuthController';
 import { CustomerController } from '../controllers/CustomerController';
+import { DoctorController } from '../controllers/DoctorController';
 import { PaymentController } from '../controllers/PaymentController';
 
 const CustomerControllerFunction = new CustomerController();
 const AppointmentControllerFunction = new AppointmentController();
-const AuthControllerFunction = new AuthController();
+const DoctorControllerFunction = new DoctorController();
 const PaymentsControllerFunction = new PaymentController();
 
 export const router = Router();
@@ -30,7 +30,7 @@ router.put('/customers/:id', CustomerControllerFunction.update);
 router.delete('/customers/:id', CustomerControllerFunction.delete);
 
 // Auth Routes
-router.post('/login', AuthControllerFunction.login);
+router.post('/login', DoctorControllerFunction.login);
 router.post('/authenticatedRoute', CustomerControllerFunction.list);
 
 // Appointments Routes

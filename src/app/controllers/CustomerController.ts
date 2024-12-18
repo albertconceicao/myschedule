@@ -31,12 +31,38 @@ export class CustomerController {
 			: undefined;
 
 		try {
-			const customers = await CustomersRepositoryFunction.findAll(orderBy);
+			// Extrair o doctorId do middleware de autenticação
+			const { doctorId } = req.body;
+
+			// Validar se o doctorId foi fornecido
+			if (!doctorId) {
+				logger.error('list :: Error :: Doctor ID is missing');
+				return res.status(StatusCode.UNAUTHORIZED).json({
+					error: 'Doctor ID não fornecido. Verifique sua autenticação.',
+				});
+			}
+
+			// Buscar apenas os clientes associados ao médico autenticado
+			const customers = await CustomersRepositoryFunction.findAllByDoctorId(
+				doctorId,
+				orderBy,
+			);
+
+			// Verificar se há clientes para o médico
+			if (customers.length === 0) {
+				logger.info('list :: No customers found for the doctor');
+				return res.status(StatusCode.NOT_FOUND).json({
+					message: 'Nenhum cliente encontrado para este médico.',
+				});
+			}
+
 			logger.info('list << End <<');
-			res.status(StatusCode.FOUND).json(customers);
+			return res.status(StatusCode.FOUND).json(customers);
 		} catch (error) {
 			logger.error('list :: Error :: ', error);
-			res.status(StatusCode.INTERNAL_SERVER_ERROR).json(generalServerError);
+			return res
+				.status(StatusCode.INTERNAL_SERVER_ERROR)
+				.json(generalServerError);
 		}
 	}
 
@@ -87,8 +113,9 @@ export class CustomerController {
 	 * @param res
 	 */
 	async createPatient(req: Request, res: Response) {
-		logger.info('create >> Start');
-		// Create a new records
+		logger.info('createPatient >> Start');
+
+		// Extraindo dados do corpo da requisição
 		const {
 			name,
 			email,
@@ -100,53 +127,75 @@ export class CustomerController {
 			monthlyRate,
 		} = req.body;
 
+		// Extraindo o doctorId injetado pelo middleware de autenticação
+		const { doctorId } = req.body;
+
+		// Verificando campos obrigatórios
 		const requiredFields = verifyRequiredFields({ name, email, password });
 
 		try {
-			// Hash the password
-			const hashedPassword = bcrypt.hashSync(password, 10);
-
-			// Validate mandatory fields
+			// Validar os campos obrigatórios
 			if (requiredFields.length > 0) {
-				logger.error('create :: Error :: ', mandatoryFieldsRequired.message);
-				logger.debug('create :: Error :: Fields ', requiredFields);
+				logger.error(
+					'createPatient :: Error :: ',
+					mandatoryFieldsRequired.message,
+				);
+				logger.debug(
+					'createPatient :: Error :: Missing Fields: ',
+					requiredFields,
+				);
 				return res
 					.status(StatusCode.BAD_REQUEST)
 					.json({ error: mandatoryFieldsRequired, fields: requiredFields });
 			}
 
-			// Check if the customer already exists
+			// Validar a existência do médico (opcional, para maior segurança)
+			const doctorExists =
+				await CustomersRepositoryFunction.findAllByDoctorId(doctorId);
+			if (!doctorExists) {
+				logger.error('createPatient :: Error :: Doctor not found');
+				return res.status(StatusCode.UNAUTHORIZED).json({
+					error: 'Médico não encontrado. Verifique sua autenticação.',
+				});
+			}
+
+			// Verificar se o cliente já existe
 			const customerExists =
 				await CustomersRepositoryFunction.findByEmail(email);
-
 			if (customerExists) {
-				logger.error('create :: Error :: ', emailAlreadyExists.message);
-				logger.debug('create :: Error :: Email :', email);
+				logger.error('createPatient :: Error :: ', emailAlreadyExists.message);
+				logger.debug('createPatient :: Error :: Email: ', email);
 				return res.status(StatusCode.BAD_REQUEST).json(emailAlreadyExists);
 			}
 
-			// Set default values for paymentType, sessionRate, and monthlyRate if not provided
+			// Gerar hash da senha
+			const hashedPassword = bcrypt.hashSync(password, 10);
+
+			// Configurar o cliente com valores padrão
 			const newCustomer = {
 				name,
 				email,
 				phone,
 				password: hashedPassword,
 				birthday,
-				paymentType: paymentType || 'per_session', // Default to 'per_session'
-				sessionRate: sessionRate || 0, // Default to 0 if not provided
-				monthlyRate: monthlyRate || 0, // Default to 0 if not provided
-				balanceDue: 0.0, // Default balance due is 0
+				paymentType: paymentType || 'per_session', // Default para 'per_session'
+				sessionRate: sessionRate || 0, // Default para 0
+				monthlyRate: monthlyRate || 0, // Default para 0
+				balanceDue: 0.0, // Default para 0
+				doctorId, // Associar o cliente ao médico autenticado
 			};
 
-			// Create the new customer
+			// Criar o cliente
 			const customer =
 				await CustomersRepositoryFunction.createPatient(newCustomer);
 
-			logger.info('create << End <<');
-			res.json(customer);
+			logger.info('createPatient << End');
+			return res.status(StatusCode.CREATED).json(customer);
 		} catch (error) {
-			logger.error('create :: Error :: ', error);
-			res.status(StatusCode.INTERNAL_SERVER_ERROR).json(generalServerError);
+			logger.error('createPatient :: Error :: ', error);
+			return res
+				.status(StatusCode.INTERNAL_SERVER_ERROR)
+				.json(generalServerError);
 		}
 	}
 
