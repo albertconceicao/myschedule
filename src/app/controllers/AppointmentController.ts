@@ -14,7 +14,17 @@ export class AppointmentController {
 		logger.info('list >> Start >>');
 
 		try {
-			const appointments = await AppointmentsRepositoryFunction.findAll();
+			const { doctorId } = req.body;
+
+			// Validar se o doctorId foi fornecido
+			if (!doctorId) {
+				logger.error('list :: Error :: Doctor ID is missing');
+				return res.status(StatusCode.UNAUTHORIZED).json({
+					error: 'Doctor ID não fornecido. Verifique sua autenticação.',
+				});
+			}
+			const appointments =
+				await AppointmentsRepositoryFunction.findAllByDoctorId(doctorId);
 			logger.info('list << End <<');
 			res.status(StatusCode.FOUND).json(appointments);
 		} catch (error) {
@@ -68,9 +78,15 @@ export class AppointmentController {
 	async create(req: Request, res: Response) {
 		logger.info('create >> Start >>');
 
-		const { customerId, date, description, notes } = req.body;
+		const { customerId, date, description, notes, doctorId } = req.body;
 
 		try {
+			if (!doctorId) {
+				logger.error('list :: Error :: Doctor ID is missing');
+				return res.status(StatusCode.UNAUTHORIZED).json({
+					error: 'Doctor ID não fornecido. Verifique sua autenticação.',
+				});
+			}
 			const customer = await CustomersRepositoryFunction.findById(customerId);
 			if (!customer) {
 				return res.status(StatusCode.NOT_FOUND).json({
@@ -90,6 +106,7 @@ export class AppointmentController {
 			const appointment =
 				await AppointmentsRepositoryFunction.createAppointment({
 					customerId,
+					doctorId,
 					date,
 					description,
 					notes,

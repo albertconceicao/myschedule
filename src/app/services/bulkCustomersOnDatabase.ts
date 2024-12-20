@@ -18,7 +18,9 @@ export const importCustomers = async (filePath: string): Promise<void> =>
 		const readStream = fs.createReadStream(filePath);
 
 		const chunks: Buffer[] = [];
-		readStream.on('data', (chunk) => chunks.push(chunk));
+		readStream.on('data', (chunk) =>
+			chunks.push(Buffre.isBuffer(chunk) ? chunk : Buffer.from(chunk)),
+		);
 		readStream.on('end', async () => {
 			try {
 				const buffer = Buffer.concat(chunks);
@@ -39,7 +41,6 @@ export const importCustomers = async (filePath: string): Promise<void> =>
 					balanceDue: row.SaldoDevedor || 0,
 				}));
 
-				// Salvar no banco usando streams
 				const writeStream = new mongoose.mongo.BulkWriteStream();
 				customers.forEach((customer) => {
 					writeStream.write({ insertOne: { document: customer } });

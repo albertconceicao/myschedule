@@ -7,6 +7,7 @@ import { AppointmentController } from '../controllers/AppointmentController';
 import { CustomerController } from '../controllers/CustomerController';
 import { DoctorController } from '../controllers/DoctorController';
 import { PaymentController } from '../controllers/PaymentController';
+import { authenticateToken } from '../middlewares/Auth';
 
 const CustomerControllerFunction = new CustomerController();
 const AppointmentControllerFunction = new AppointmentController();
@@ -16,11 +17,19 @@ const PaymentsControllerFunction = new PaymentController();
 export const router = Router();
 const upload = multer({ dest: path.resolve(__dirname, '..', 'uploads') });
 
+// Doctor Routes
+
+router.post('/doctors', DoctorControllerFunction.createDoctor);
+
 // Customers Routes
-router.get('/customers', CustomerControllerFunction.list);
+router.get('/customers', authenticateToken, CustomerControllerFunction.list);
 router.get('/customers/birthday', CustomerControllerFunction.listAllBirthdays);
 router.get('/customers/:id', CustomerControllerFunction.find);
-router.post('/customers', CustomerControllerFunction.createPatient);
+router.post(
+	'/customers',
+	authenticateToken,
+	CustomerControllerFunction.createPatient,
+);
 router.post(
 	'/customers/import',
 	upload.single('file'),
@@ -34,7 +43,11 @@ router.post('/login', DoctorControllerFunction.login);
 router.post('/authenticatedRoute', CustomerControllerFunction.list);
 
 // Appointments Routes
-router.get('/appointments', AppointmentControllerFunction.list);
+router.get(
+	'/appointments',
+	authenticateToken,
+	AppointmentControllerFunction.list,
+);
 router.get(
 	'/customers/:customerId/appointments',
 	AppointmentControllerFunction.listByCustomer,
@@ -43,7 +56,11 @@ router.get(
 	'/appointments/:appointmentId',
 	AppointmentControllerFunction.findById,
 );
-router.post('/appointments', AppointmentControllerFunction.create);
+router.post(
+	'/appointments',
+	authenticateToken,
+	AppointmentControllerFunction.create,
+);
 router.put(
 	'/appointments/:appointmentId',
 	AppointmentControllerFunction.update,

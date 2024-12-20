@@ -7,6 +7,11 @@ const Appointment: any = new Schema(
 			ref: 'customers',
 			required: true,
 		},
+		doctorId: {
+			type: Schema.Types.ObjectId,
+			ref: 'doctors',
+			required: true,
+		},
 		date: {
 			type: Date,
 			required: true,

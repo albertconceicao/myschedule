@@ -1,6 +1,5 @@
 import fs from 'fs/promises';
 
-import bcrypt from 'bcrypt';
 import { Request, Response } from 'express';
 import xlsx from 'xlsx';
 
@@ -42,13 +41,11 @@ export class CustomerController {
 				});
 			}
 
-			// Buscar apenas os clientes associados ao médico autenticado
 			const customers = await CustomersRepositoryFunction.findAllByDoctorId(
 				doctorId,
 				orderBy,
 			);
 
-			// Verificar se há clientes para o médico
 			if (customers.length === 0) {
 				logger.info('list :: No customers found for the doctor');
 				return res.status(StatusCode.NOT_FOUND).json({
@@ -120,7 +117,6 @@ export class CustomerController {
 			name,
 			email,
 			phone,
-			password,
 			birthday,
 			paymentType,
 			sessionRate,
@@ -131,7 +127,7 @@ export class CustomerController {
 		const { doctorId } = req.body;
 
 		// Verificando campos obrigatórios
-		const requiredFields = verifyRequiredFields({ name, email, password });
+		const requiredFields = verifyRequiredFields({ name, email });
 
 		try {
 			// Validar os campos obrigatórios
@@ -169,20 +165,18 @@ export class CustomerController {
 			}
 
 			// Gerar hash da senha
-			const hashedPassword = bcrypt.hashSync(password, 10);
 
 			// Configurar o cliente com valores padrão
 			const newCustomer = {
 				name,
 				email,
 				phone,
-				password: hashedPassword,
 				birthday,
 				paymentType: paymentType || 'per_session', // Default para 'per_session'
 				sessionRate: sessionRate || 0, // Default para 0
 				monthlyRate: monthlyRate || 0, // Default para 0
 				balanceDue: 0.0, // Default para 0
-				doctorId, // Associar o cliente ao médico autenticado
+				doctorId,
 			};
 
 			// Criar o cliente
@@ -208,18 +202,8 @@ export class CustomerController {
 		logger.info('update >> Start >>');
 		// Update a specific records
 		const { id } = req.params;
-		const {
-			name,
-			email,
-			phone,
-			password,
-			birthday,
-			paymentType,
-			sessionRate,
-			monthlyRate,
-		} = req.body;
+		const { name, email, phone } = req.body;
 
-		const hashedPassword = bcrypt.hashSync(password, 10);
 		try {
 			const customerExists = await CustomersRepositoryFunction.findById(id);
 			const requiredFields = verifyRequiredFields({ name, email });
@@ -238,6 +222,7 @@ export class CustomerController {
 			}
 			const customerByEmail =
 				await CustomersRepositoryFunction.findByEmail(email);
+			// eslint-disable-next-line eqeqeq
 			if (customerByEmail && customerByEmail._id != id) {
 				logger.error('update :: Error :: ', emailAlreadyExists.message);
 				logger.debug('update :: Error :: Email :', email);
@@ -248,12 +233,6 @@ export class CustomerController {
 				name,
 				email,
 				phone,
-				password: hashedPassword,
-				birthday,
-				paymentType: paymentType || 'per_session', // Default to 'per_session'
-				sessionRate: sessionRate || 0, // Default to 0 if not provided
-				monthlyRate: monthlyRate || 0, // Default to 0 if not provided
-				balanceDue: 0,
 			});
 
 			logger.info('update << End <<');

@@ -7,7 +7,6 @@ import { ChargesRepository } from './ChargesRepository';
 
 const ChargesRepositoryFunction = new ChargesRepository();
 const Payment = mongoose.model('payments');
-const Customer = mongoose.model('customers');
 
 interface IPayment {
 	id?: string;

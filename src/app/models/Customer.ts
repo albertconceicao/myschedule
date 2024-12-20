@@ -41,7 +41,7 @@ const Customer: any = new Schema(
 		},
 		doctorId: {
 			type: mongoose.Schema.Types.ObjectId,
-			ref: 'Doctor', // Referência ao Doctor
+			ref: 'doctors',
 			required: true,
 		},
 	},

@@ -7,6 +7,7 @@ const Appointment = mongoose.model('appointments');
 
 interface IAppointment {
 	customerId?: string;
+	doctorId?: string;
 	date: Date;
 	description: string;
 	notes?: string;
@@ -16,6 +17,15 @@ interface IAppointment {
 export class AppointmentsRepository {
 	async findAll() {
 		return Appointment.find({}).populate('customerId').sort({ date: 'asc' });
+	}
+
+	async findAllByDoctorId(doctorId: string, orderBy?: string): Promise<any> {
+		const direction = orderBy?.toUpperCase() === 'DESC' ? -1 : 1;
+
+		return Appointment.find({ doctorId })
+			.sort({ name: direction })
+			.populate('customerId')
+			.sort({ date: 'asc' });
 	}
 
 	async findById(id: string): Promise<any> {
