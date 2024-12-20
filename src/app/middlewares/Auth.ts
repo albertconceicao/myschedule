@@ -22,7 +22,7 @@ export function authenticateToken(
 			process.env.JWT_SECRET || 'defaultSecret',
 		);
 
-		req.body.doctorId = decoded.doctorId;
+		req.body.doctorId = decoded.doctor._id;
 		next();
 	} catch (error) {
 		res.status(403).json({ error: 'Token inválido ou expirado' });

@@ -36,7 +36,7 @@ export class DoctorController {
 			}
 
 			const token = jwt.sign(
-				{ doctorId: doctor._id },
+				{ doctor },
 				process.env.JWT_SECRET || 'defaultSecret',
 				{ expiresIn: '7d' },
 			);
